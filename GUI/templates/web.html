@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>SDP GUI</title>
+</head>
+<body>
+    <h1>SDP GUI</h1>
+
+    <!-- Choose an algorithm -->
+    <form method="POST" action="/">
+        <label for="algorithm">Choose an algorithm:</label>
+        <select name="algorithm" id="algorithm">
+            <option value="algorithm1">Algorithm 1</option>
+            <option value="algorithm2">Algorithm 2</option>
+            <option value="algorithm3">Algorithm 3</option>
+            <option value="algorithm4">Algorithm 4</option>
+        </select>
+        <button type="submit">Run Algorithm</button>
+    </form>
+
+    <!-- Display the result -->
+    {% if result %}
+        <h2>Result:</h2>
+        <p>{{ result }}</p>
+    {% endif %}
+</body>
+</html>
