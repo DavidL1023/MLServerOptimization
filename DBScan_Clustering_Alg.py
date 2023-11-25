@@ -9,12 +9,43 @@ from sklearn.preprocessing import StandardScaler
 from sklearn import datasets
 
 df = pd.read_csv("exportforuconn.csv")
+data = df.columns
+
+# Convert dates to numerical representation (Unix timestamp)
+df['_time'] = pd.to_datetime(df['_time']).astype(int) // 10**9
+
+# Reshape data for clustering
+df['_time'] = StandardScaler().fit_transform(df[['_time']]) 
+
+string_to_int = {val: idx for idx, val in enumerate(df['host'].unique())}
+
+# Map strings to integers using the created mapping
+df['host'] = df['host'].map(string_to_int)
+
+
+print("Options for columns are:")
+str = '\n'
+for item in data:
+    str += item + ' '
+print(str + '\n') 
+
+table_1 = input("Enter a column from the data set to be clustered (X values): ")
+while table_1 not in data:
+    table_1 = input("This is not in the data set, enter a different column: ")
+table_2 = input("Enter another column from the data set to be clustered (Y values): ")
+while table_2 not in data:
+    table_2 = input("This is not in the data set, enter a different column: ")
+
+eps_value = float(input("Enter an eps value to cluseter by: "))
+groups = int(input("Enter the number of clusters you would like: "))
+
 df = df.fillna(0)
-df = df.iloc[0:1000, 2:4]
-X_train = df[['Mem_Avg', 'Mem_Max']]
+df = df.iloc[0:1000, :]
+X_train = df[[table_1, table_2]]
 
-
-clustering = DBSCAN(eps=12.5, min_samples=4).fit(X_train)
+#eps = 12.5
+#min_samples = 4
+clustering = DBSCAN(eps=eps_value, min_samples=groups).fit(X_train)
 DBSCAN_dataset = X_train.copy()
 DBSCAN_dataset.loc[:,'Cluster'] = clustering.labels_ 
 
@@ -24,9 +55,9 @@ outliers = DBSCAN_dataset[DBSCAN_dataset['Cluster']==-1]
 
 fig2, axes = plt.subplots(1,figsize=(12,5))
 
-sns.scatterplot(data=DBSCAN_dataset[DBSCAN_dataset['Cluster']!=-1], x='Mem_Avg', y='Mem_Max', hue=None, ax=axes, palette='Set2', legend='full', s=200)
+sns.scatterplot(data=DBSCAN_dataset[DBSCAN_dataset['Cluster']!=-1], x=table_1, y=table_2, hue=None, ax=axes, palette='Set2', legend='full', s=200)
 
-axes.scatter(outliers['Mem_Avg'], outliers['Mem_Max'], s=10, label='outliers', c="k")
+axes.scatter(outliers[table_1], outliers[table_2], s=10, label='outliers', c="k")
 
 axes.legend()
 
