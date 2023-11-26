@@ -8,7 +8,11 @@ from sklearn.datasets import make_blobs
 from sklearn.preprocessing import StandardScaler
 from sklearn import datasets
 
-df = pd.read_csv("exportforuconn.csv")
+chunksize = 100000
+
+tfr = pd.read_csv("exportforuconn.csv", chunksize=chunksize, iterator=True)
+df = pd.concat(tfr, ignore_index=True)
+
 data = df.columns
 
 # Convert dates to numerical representation (Unix timestamp)
@@ -40,13 +44,12 @@ eps_value = float(input("Enter an eps value to cluseter by: "))
 groups = int(input("Enter the number of clusters you would like: "))
 
 df = df.fillna(0)
-df = df.iloc[0:1000, :]
-X_train = df[[table_1, table_2]]
+df = df.iloc[0:30000, :]
 
-#eps = 12.5
-#min_samples = 4
-clustering = DBSCAN(eps=eps_value, min_samples=groups).fit(X_train)
-DBSCAN_dataset = X_train.copy()
+DBSCAN_data = df[[table_1, table_2]]
+
+clustering = DBSCAN(eps=eps_value, min_samples=groups).fit(DBSCAN_data)
+DBSCAN_dataset = DBSCAN_data.copy()
 DBSCAN_dataset.loc[:,'Cluster'] = clustering.labels_ 
 
 DBSCAN_dataset.Cluster.value_counts().to_frame()
@@ -55,7 +58,7 @@ outliers = DBSCAN_dataset[DBSCAN_dataset['Cluster']==-1]
 
 fig2, axes = plt.subplots(1,figsize=(12,5))
 
-sns.scatterplot(data=DBSCAN_dataset[DBSCAN_dataset['Cluster']!=-1], x=table_1, y=table_2, hue=None, ax=axes, palette='Set2', legend='full', s=200)
+sns.scatterplot(data=DBSCAN_dataset[DBSCAN_dataset['Cluster']!=-1], x=table_1, y=table_2, hue='Cluster', ax=axes, palette='Set2', legend='full', s=200)
 
 axes.scatter(outliers[table_1], outliers[table_2], s=10, label='outliers', c="k")
 
