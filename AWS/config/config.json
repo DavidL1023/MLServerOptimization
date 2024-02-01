@@ -1,7 +1,7 @@
 {
     "aws": {
-        "access_key_id": "AKIAVM2FBN6P7N5LLPU6",
-        "secret_access_key": "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",
+        "access_key_id": "",
+        "secret_access_key": "",
         "region_name": "us-east-1"
     },
     "ec2": {
