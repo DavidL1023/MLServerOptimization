@@ -1,0 +1,14 @@
+{
+    "aws": {
+        "access_key_id": "AKIAVM2FBN6P7N5LLPU6",
+        "secret_access_key": "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",
+        "region_name": "us-east-1"
+    },
+    "ec2": {
+        "instance_ids": ["i-0a6150cc19da7220c"]
+    },
+    "monitoring": {
+        "period": 3600,
+        "statistics": ["Average"]
+    }
+}
