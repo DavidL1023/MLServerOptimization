@@ -1,27 +1,128 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SDP GUI</title>
 </head>
 <body>
     <h1>SDP GUI</h1>
-
     <!-- Choose an algorithm -->
-    <form method="POST" action="/">
-        <label for="algorithm">Choose an algorithm:</label>
-        <select name="algorithm" id="algorithm">
-            <option value="algorithm1">Algorithm 1</option>
-            <option value="algorithm2">Algorithm 2</option>
-            <option value="algorithm3">Algorithm 3</option>
-            <option value="algorithm4">Algorithm 4</option>
-        </select>
-        <button type="submit">Run Algorithm</button>
-    </form>
+    <div id="algorithmSelection">
+        <h2>Algorithm Analysis</h2>
+        <form id="algorithmForm">
+            <label for="algorithm">Choose an algorithm:</label>
+            <select name="algorithm" id="algorithm">
+                <option value="AndyAlgorithm">Andy's Algorithm</option>
+                <option value="NickAlgorithm">Nick's Algorithm</option>
+                <option value="MasonAlgorithm">Mason's Algorithm</option>
+            </select>
+            <button type="button" onclick="runAlgorithm()">Run Algorithm</button>
+        </form>
+    </div>
 
     <!-- Display the result -->
-    {% if result %}
-        <h2>Result:</h2>
-        <p>{{ result }}</p>
-    {% endif %}
+    <div id="results"></div>
+
+    <!-- Choose a graph -->
+     <div id="graphSelection">
+        <h2>Choose a Graph</h2>
+        <form id="graphForm">
+            <label for="graph">Choose a graph:</label>
+            <select name="graph" id="graph">
+                <option value="ClusterGraph">Cluster Graph</option>
+                <option value="Graph2">Graph 2</option>
+                <option value="Graph3">Graph 3</option>
+            </select>
+            <button type="button" onclick="chooseGraph()">Choose Graph</button>
+        </form>
+    </div>
+
+    <!-- Display the result -->
+    <div id="graphresults"></div>
+    
+    <script>
+        function runAlgorithm() {
+            // Get the selected algorithm from the dropdown
+            const selectedAlgorithm = document.getElementById('algorithm').value;
+
+            // Make an AJAX request to your server to run the algorithm
+            fetch('/run-algorithm', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ algorithm: selectedAlgorithm })
+            })
+            .then(response => response.json()) // Assuming your server returns JSON
+            .then(data => {
+                // Update the content of the results div based on the response from the server
+                document.getElementById('results').innerHTML = `
+                    ${data.algorithm ? `<h2>${data.algorithm} Results:</h2>` : ''}
+                    ${data.result ? `<p>${data.result.replace(/\n/g, '<br>')}</p>` : ''}
+                `;
+            })
+        }
+        function chooseGraph() {
+        // Get the selected graph from the dropdown
+        const selectedGraph = document.getElementById('graph').value;
+
+        // Check if the selected graph is "Cluster Graph"
+        if (selectedGraph === 'ClusterGraph') {
+            // Display the clustering algorithm interaction menu
+            document.getElementById('graphresults').innerHTML = `
+                <div id="clusteringAlgorithm">
+                    <h2>Interact with Clustering Algorithm</h2>
+                    <p class="instruction">Use the form below to input the parameters for the clustering algorithm.</p>
+                    <p class="valid-parameters">Valid axis parameters include: <code>_time</code>, <code>host</code>, <code>Mem_Avg</code>, <code>Mem_Max</code>, <code>CPU_95th_Perc</code>, <code>CPU_Max</code>, <code>RXMbps</code>, <code>TXMbps</code>, <code>Disk_Avg</code>, <code>Disk_Max</code>, <code>process_count</code>, <code>Load_Avg_1min_NIX</code>.</p>
+                    <p class="example">Example: X Axis: <code>host</code>, Y Axis: <code>Mem_Avg</code>, EPS: <code>12</code>, Number of Clusters: <code>1</code></p>
+                </div>
+                <form id="clusteringForm">
+                    <label for="xColumn">X Axis:</label>
+                    <input type="text" name="xColumn" id="xColumn" required>
+            
+                    <label for="yColumn">Y Axis:</label>
+                    <input type="text" name="yColumn" id="yColumn" required>
+            
+                    <label for="eps">EPS:</label>
+                    <input type="number" name="eps" id="eps" required>
+            
+                    <label for="groups">Number of Clusters:</label>
+                    <input type="number" name="groups" id="groups" required>
+        
+                    <button type="button" onclick="runClustering()">Run Clustering</button>
+                </form>
+                <div id="clusteringResult"></div> <!-- Div to display clustering result -->
+                <img id="clusterPlot" src="data:image/png;base64,{{ plot_data }}" alt="Enter Cluster Algorithm Data">
+            `;
+        }
+    }
+
+    function runClustering() {
+        // Get form data
+        const xColumn = document.getElementById('xColumn').value;
+        const yColumn = document.getElementById('yColumn').value;
+        const eps = parseFloat(document.getElementById('eps').value);
+        const groups = parseInt(document.getElementById('groups').value);
+
+        // Make an AJAX request to run the clustering algorithm
+        fetch('/run-cluster-graph', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ xColumn, yColumn, eps, groups })
+        })
+        .then(response => response.json())
+        .then(data => {
+            const clusterPlotImg = document.getElementById('clusterPlot');
+            clusterPlotImg.src = "data:image/png;base64," + data.plot_data;
+            clusterPlotImg.alt = "Cluster Algorithm Data"; // Update alt attribute
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+    </script>  
 </body>
 </html>
