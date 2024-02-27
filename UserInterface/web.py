@@ -80,8 +80,7 @@ def run_algorithm():
 def choose_graph():
     if request.method == 'POST':
         graph = request.json.get('graph')
-        result = f"{graph}"
-        return jsonify({'graph': graph, 'result': result})
+        return jsonify({'graph': graph})
 
 @app.route('/run-cluster-graph', methods=['POST'])
 def run_cluster_graph():
