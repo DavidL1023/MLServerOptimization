@@ -1,0 +1,97 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<h2 class="mt-2">Models</h2>
+
+<div class="dropdown mb-2">
+  <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    Choose a Model
+  </button>
+  <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+    <a class="dropdown-item" href="#andy" data-model="Andy">Andy</a>
+    <a class="dropdown-item" href="#mason" data-model="Mason">Mason</a>
+    <a class="dropdown-item" href="#nick" data-model="Nick">Nick</a>
+  </div>
+</div>
+
+<!-- Placeholder for the model details -->
+<div id="modelDetails"></div>
+
+<!-- Button to run model -->
+<button id="runButton" type="button" class="btn btn-primary mb-2">Test Model</button>
+
+<!-- Dropdown menu script -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var dropdownItems = document.querySelectorAll('.dropdown-item');
+        dropdownItems.forEach(function(item) {
+            item.addEventListener('click', function() {
+                // Remove active class from all items
+                dropdownItems.forEach(function(innerItem) {
+                    innerItem.classList.remove('active');
+                });
+
+                // Add active class to the clicked item
+                this.classList.add('active');
+
+                var modelName = this.getAttribute('data-model'); // Get the model name
+                var modelDetails = document.getElementById('modelDetails');
+                // Update the modelDetails div based on the selection
+                if (modelName === 'Andy') {
+                    modelDetails.innerHTML = '<h4>ARIMA and Time Series Decomposition</h4>' +
+                    '<p>ARIMA (AutoRegressive Integrated Moving Average) combines autoregression, differencing, and moving average components to forecast time series data. It\'s effective for capturing temporal structures like trends and seasonality. Time Series Decomposition separates time series data into trend, seasonal, and residual components, aiding in understanding and forecasting.</p>';
+                } else if (modelName === 'Mason') {
+                    modelDetails.innerHTML = '<h4>Prophet by Meta</h4>' +
+                    '<p>Developed by Meta, Prophet is designed for business data forecasting, handling missing data, trend shifts, and outliers with ease. It uses a decomposable model focusing on trend, seasonality, and holidays, ideal for forecasting non-linear trends with daily observations that display seasonal patterns.</p>';
+                } else if (modelName === 'Nick') {
+                    modelDetails.innerHTML = '<h4>Long Short-Term Memory (LSTM)</h4>' +
+                    '<p>LSTM networks, a type of recurrent neural network, excel at making predictions based on time series data by learning long-term dependencies. This makes them suitable for complex forecasting tasks where understanding the sequence of data points is crucial.</p>';
+                }
+            });
+        });
+    });
+</script>
+
+
+<!-- Run button script -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var button = document.getElementById('runButton');
+        var dropdownItems = document.querySelectorAll('.dropdown-item');
+    
+        button.addEventListener('click', function() {
+            var selectedModel = null;
+    
+            // Identify the selected model
+            dropdownItems.forEach(function(item) {
+                if(item.classList.contains('active')) {
+                    selectedModel = item.getAttribute('data-model');
+                }
+            });
+    
+            // Warn if no model is selected or send request to the server
+            if (!selectedModel) {
+                alert('Select a model first!');
+            } else {
+                fetch('/run-model', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ model: selectedModel }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Success:', data);
+                    // Process server response here
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+            }
+        });
+    });
+</script>    
+    
+
+{% endblock %}
