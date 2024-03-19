@@ -8,7 +8,7 @@
 <body>
     <!-- Top bar -->
     <nav class="navbar navbar-dark bg-dark">
-        <img src="images\lockheed-martin.svg" class="img-fluid" alt="logo">
+        <img src="{{ url_for('static', filename='Lockheed_Martin_logo.svg') }}" width="300" class="img-fluid" alt="logo">
     </nav>
 
     <!-- Side bar -->
@@ -25,6 +25,7 @@
                 </div>
             </nav>
 
+        <!-- This is replaced by bootstrap by the other html files depending on what is selected -->
             <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
                 {% block content %}{% endblock %}
             </main>
