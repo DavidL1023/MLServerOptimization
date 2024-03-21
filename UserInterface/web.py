@@ -192,8 +192,8 @@ def generate_prophet():
 
     return plot_base64_1, plot_base64_2
 
-# Generate Time Series Plots
-def generate_timeseries():
+# Generate Time Series Seasonal Decomposition Plot
+def generate_seasonaldecomposition():
     # Read data
     df = pd.read_csv("24h_data.csv")
     dataframe = pd.Series(df["95th"])
@@ -344,11 +344,11 @@ def run_prophet():
         plot_prophet = generate_prophet()
         return jsonify({'plot_prophet': [plot_prophet[0], plot_prophet[1]]})
 
-@app.route('/run-timeseries', methods=['POST'])
-def run_timeseries():
+@app.route('/run-seasonaldecomposition', methods=['POST'])
+def run_seasonaldecomposition():
     if request.method == 'POST':
-        plot_timeseries = generate_timeseries()
-        return jsonify({'plot_timeseries': plot_timeseries})
+        plot_seasonaldecomposition = generate_seasonaldecomposition()
+        return jsonify({'plot_seasonaldecomposition': plot_seasonaldecomposition})
 
 @app.route('/run-lstm', methods=['POST'])
 def run_lstm():

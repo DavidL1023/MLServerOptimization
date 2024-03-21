@@ -24,10 +24,11 @@
     <!-- Choose an algorithm -->
     <div id="algorithmSelection">
         <h2>Algorithm Analysis</h2>
+        <p>*Note: Algorithms may take a minute or so to run.*</p>
         <form id="algorithmForm">
             <label for="algorithm">Choose an algorithm:</label>
             <select name="algorithm" id="algorithm">
-                <option value="TimeSeriesModel">Time Series Model</option>
+                <option value="SeasonalDecompositionModel">Seasonal Decomposition Model</option>
                 <option value="LSTMModel">LSTM Model</option>
                 <option value="ProphetModel">Prophet Model</option>
             </select>
@@ -79,8 +80,8 @@
                 })
                 .catch(error => console.error('Error:', error));
             }
-            if (selectedAlgorithm === 'TimeSeriesModel') {
-                fetch('/run-timeseries', {
+            if (selectedAlgorithm === 'SeasonalDecompositionModel') {
+                fetch('/run-seasonaldecomposition', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -90,7 +91,7 @@
                 .then(response => response.json()) // Assuming your server returns JSON
                 .then(data => {
                     // Update the content of the results div based on the response from the server
-                    document.getElementById('plot_base64_1').src = "data:image/png;base64," + data.plot_timeseries;
+                    document.getElementById('plot_base64_1').src = "data:image/png;base64," + data.plot_seasonaldecomposition;
                     document.getElementById('plot_base64_2').src = "";
                 })
                 .catch(error => console.error('Error:', error));
