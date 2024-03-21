@@ -239,82 +239,67 @@ def generate_timeseries():
 
     return plot_base64_1
 
-# MinMaxScaler scales the data so that it is all within the range of (0,1)
-scaler = MinMaxScaler(feature_range=(0, 1))
-
-def prepare_data(data, sequence_length=12, train_test_split=.75):
-    global scaler  # declare scaler as global to access it within the function
-    # data is a list
-    data_normalized = scaler.fit_transform(np.array(data).reshape(-1, 1)).flatten()
-
-    # sequence_length=12 means use past 12 hours of data to predict the next hour
-    # data_X is a list of subsequences of length sequence_length.
-    # data_y has the real target value that comes immediately after the corresponding subsequence in data_X
-    # LSTM model is trying to predict the ith value of data_y based on the ith subsequence in data_X
-    # doing this is what allows the model to find patterns in the data
-    data_X, data_y = [], []
-    for i in range(len(data_normalized) - sequence_length):
-        data_X.append(data_normalized[i:i+sequence_length])
-        data_y.append(data_normalized[i+sequence_length])
-
-    # convert python lists to numpy ndarrays
-    data_X = np.array(data_X)
-    data_y = np.array(data_y)
-
-    # convert ndarrays to tensors, needed for pytorch
-    X = torch.tensor(data_X, dtype=torch.float32)
-    y = torch.tensor(data_y, dtype=torch.float32)
-
-    # split data into train and test
-    split = math.floor(len(X) * train_test_split)
-    X_train, X_test = X[:split], X[split:]
-    y_train, y_test = y[:split], y[split:]
-
-    # reshape data for LSTM model
-    X_train = X_train.view(-1, sequence_length, 1)
-    X_test = X_test.view(-1, sequence_length, 1)
-
-    # prepare output
-    train_loader = (X_train, y_train)
-    test_loader = (X_test, y_test)
-    return train_loader, test_loader, split, sequence_length
-
 # Define LSTM Model
 class LSTMModel(nn.Module):
     def __init__(self, input_size=1, hidden_layer_size=50, output_size=1):
         super().__init__()
         self.hidden_layer_size = hidden_layer_size
-        # defining the different layers of the LSTM model
         self.lstm = nn.LSTM(input_size, hidden_layer_size)
         self.linear = nn.Linear(hidden_layer_size, output_size)
-        self.hidden_cell = (torch.zeros(1,1,self.hidden_layer_size),
-                            torch.zeros(1,1,self.hidden_layer_size))
+        self.hidden_cell = (torch.zeros(1, 1, self.hidden_layer_size),
+                            torch.zeros(1, 1, self.hidden_layer_size))
 
     def forward(self, input_seq):
-        lstm_out, self.hidden_cell = self.lstm(input_seq.view(len(input_seq) ,1, -1), self.hidden_cell)
+        lstm_out, self.hidden_cell = self.lstm(input_seq.view(len(input_seq), 1, -1), self.hidden_cell)
         predictions = self.linear(lstm_out.view(len(input_seq), -1))
         return predictions[-1]
+    
+# Generate LSTM (Long Short-Term Memory) Plots
+def generate_lstm():
+    df = pd.read_csv('by_half_hour.csv', parse_dates=True)
+    timestamps = df["Timestamp"].tolist()
+    cpu_data = df["Avg_CPU_95"].tolist()
+    sequence_length = 12
+    train_test_split = 0.75
+    scaler = MinMaxScaler(feature_range=(0, 1))
+    data_normalized = scaler.fit_transform(np.array(cpu_data).reshape(-1, 1)).flatten()
 
-def Training(model, optimizer, train_loader, num_epochs=20):
-    start = time.time()
+    data_X, data_y = [], []
+    for i in range(len(data_normalized) - sequence_length):
+        data_X.append(data_normalized[i:i + sequence_length])
+        data_y.append(data_normalized[i + sequence_length])
+
+    data_X = np.array(data_X)
+    data_y = np.array(data_y)
+
+    X = torch.tensor(data_X, dtype=torch.float32)
+    y = torch.tensor(data_y, dtype=torch.float32)
+
+    split = math.floor(len(X) * train_test_split)
+    X_train, X_test = X[:split], X[split:]
+    y_train, y_test = y[:split], y[split:]
+
+    X_train = X_train.view(-1, sequence_length, 1)
+    X_test = X_test.view(-1, sequence_length, 1)
+
+    train_loader = (X_train, y_train)
+    test_loader = (X_test, y_test)
+
+    model = LSTMModel(hidden_layer_size=50)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
     loss_function = nn.MSELoss()
+    num_epochs = 20
+
     for i in range(num_epochs):
         for seq, labels in zip(train_loader[0], train_loader[1]):
-            optimizer.zero_grad()         
+            optimizer.zero_grad()
             model.hidden_cell = (torch.zeros(1, 1, model.hidden_layer_size),
-                            torch.zeros(1, 1, model.hidden_layer_size))
-            y_pred = model(seq)           
-            single_loss = loss_function(y_pred, labels)     
-            single_loss.backward()        
-            optimizer.step()              
+                                 torch.zeros(1, 1, model.hidden_layer_size))
+            y_pred = model(seq)
+            single_loss = loss_function(y_pred, labels)
+            single_loss.backward()
+            optimizer.step()
 
-        if i%3 == 0:
-            print("epoch: {:3} loss: {:10.8f} time elapsed: {}".format(
-                i, single_loss.item(), time.time()-start))
-
-    return model
-  
-def Testing(model, test_loader, split, sequence_length):
     model.eval()
     y_pred = []
     for seq in test_loader[0]:
@@ -328,37 +313,7 @@ def Testing(model, test_loader, split, sequence_length):
 
     mse = mean_squared_error(scaler.inverse_transform(y_test.reshape(-1, 1)), y_pred_trans)
     rmse = np.sqrt(mse)
-    return rmse
 
-# Generate LSTM (Long Short-Term Memory) Plots
-def generate_lstm():
-    # Read data
-    df = pd.read_csv("by_half_hour.csv", parse_dates=True)
-    timestamps = df["Timestamp"].tolist()
-    cpu_data = df["Avg_CPU_95"].tolist()
-
-    train_loader, test_loader, split, sequence_length = prepare_data(cpu_data)
-    model = LSTMModel(hidden_layer_size=50)
-    optimizer = torch.optim.Adam(model.parameters(), lr=.0001)
-
-    result = Training(model, optimizer, train_loader)
-    rmse = Testing(result, test_loader, split, sequence_length)
-    print("RMSE: ", rmse)
-
-    # Get test predictions
-    model.eval()
-    y_pred = []
-    for seq in test_loader[0]:
-        with torch.no_grad():
-            model.hidden = (torch.zeros(1, 1, model.hidden_layer_size),
-                            torch.zeros(1, 1, model.hidden_layer_size))
-            y_pred.append(model(seq).item())
-
-    # Transform predictions and test data back to original scale
-    y_pred_trans = scaler.inverse_transform(np.array(y_pred).reshape(-1, 1)).flatten()
-    y_test = scaler.inverse_transform(test_loader[1].reshape(-1, 1)).flatten()
-
-    # Plot the results
     plt.figure(figsize=(15, 6))
     plt.plot(timestamps[split + sequence_length:], y_pred_trans, label='Predicted')
     plt.plot(timestamps[split + sequence_length:], scaler.inverse_transform(y_test.reshape(-1, 1)).flatten(), label='Real')
@@ -366,23 +321,15 @@ def generate_lstm():
     plt.ylabel('CPU Usage')
     plt.title('Real vs Predicted CPU Usage')
     plt.legend()
-    
-    # Create BytesIO object to store plot image data
+
     plot_io = BytesIO()
-
-    # Save figure to the BytesIO obj in PNG format
     plt.savefig(plot_io, format='png')
-
-    # Move to the start of the BytesIO object
     plot_io.seek(0)
-
-    # Encode image data as base64 for transmission
     plot_base64_1 = base64.b64encode(plot_io.getvalue()).decode('utf-8')
-
-    # Close figure to release memory
     plt.close()
 
     return plot_base64_1
+
 
 # Run Algorithm
 @app.route('/run-algorithm', methods=['POST'])
